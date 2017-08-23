@@ -11,6 +11,10 @@ using Host.Services;
 using Microsoft.Extensions.Options;
 using Serilog;
 using Host.Configuration;
+using Microsoft.AspNetCore.Authentication.Cookies;
+using Microsoft.AspNetCore.Authentication.Google;
+using Microsoft.AspNetCore.Identity;
+using IdentityServer4;
 
 namespace Host
 {
@@ -41,6 +45,14 @@ namespace Host
                 .AddDefaultTokenProviders()
                 .AddIdentityServerUserClaimsPrincipalFactory();
 
+            services.AddAuthentication(IdentityServerConstants.DefaultCookieAuthenticationScheme)
+                .AddGoogle("Google", options =>
+                {
+                    options.SignInScheme = IdentityServerConstants.ExternalCookieAuthenticationScheme;
+                    options.ClientId = "998042782978-s07498t8i8jas7npj4crve1skpromf37.apps.googleusercontent.com";
+                    options.ClientSecret = "HsnwJri_53zn7VcO1Fm7THBb";
+                });
+
             services.AddMvc();
 
             // Add application services.
@@ -48,7 +60,7 @@ namespace Host
             services.AddTransient<ISmsSender, AuthMessageSender>();
 
             services.AddIdentityServer()
-                .AddTemporarySigningCredential()
+                .AddDeveloperSigningCredential()
                 .AddInMemoryPersistedGrants()
                 .AddInMemoryIdentityResources(Resources.GetIdentityResources())
                 .AddInMemoryApiResources(Resources.GetApiResources())
@@ -57,21 +69,8 @@ namespace Host
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
-        public void Configure(IApplicationBuilder app, IHostingEnvironment env, ILoggerFactory loggerFactory)
+        public void Configure(IApplicationBuilder app, IHostingEnvironment env, ILoggingBuilder loggingBuilder)
         {
-            Log.Logger = new LoggerConfiguration()
-                .MinimumLevel.Debug()
-                .WriteTo.File(@"c:\logs\idsvr_aspid.txt")
-                .CreateLogger();
-
-            loggerFactory.AddConsole(Configuration.GetSection("Logging"));
-            loggerFactory.AddDebug();
-            loggerFactory.WithFilter(new FilterLoggerSettings {
-                { "Host", LogLevel.Information },
-                { "IdentityServer4", LogLevel.Debug },
-                { "Microsoft", LogLevel.Warning }
-            }).AddSerilog(Log.Logger);
-
             if (env.IsDevelopment())
             {
                 app.UseDeveloperExceptionPage();
@@ -84,19 +83,10 @@ namespace Host
 
             app.UseStaticFiles();
 
-            app.UseIdentity();
+            app.UseAuthentication();
             app.UseIdentityServer();
 
             // Add external authentication middleware below. To configure them please see http://go.microsoft.com/fwlink/?LinkID=532715
-            var externalCookieScheme = app.ApplicationServices.GetRequiredService<IOptions<IdentityOptions>>().Value.Cookies.ExternalCookieAuthenticationScheme;
-            app.UseGoogleAuthentication(new GoogleOptions
-            {
-                AuthenticationScheme = "Google",
-                SignInScheme = externalCookieScheme,
-                ClientId = "998042782978-s07498t8i8jas7npj4crve1skpromf37.apps.googleusercontent.com",
-                ClientSecret = "HsnwJri_53zn7VcO1Fm7THBb",
-            });
-
             app.UseMvc(routes =>
             {
                 routes.MapRoute(

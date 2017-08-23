@@ -13,8 +13,8 @@ using Host.Services;
 using IdentityServer4.Quickstart.UI;
 using IdentityServer4.Services;
 using IdentityServer4.Stores;
-using Microsoft.AspNetCore.Http.Authentication;
 using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Authentication;
 
 namespace Host.Controllers
 {
@@ -29,6 +29,7 @@ namespace Host.Controllers
         private readonly ILogger _logger;
         private readonly IIdentityServerInteractionService _interaction;
         private readonly IClientStore _clientStore;
+        private readonly IAuthenticationSchemeProvider _authSchemeProvider;
         private readonly AccountService _account;
 
         public AccountController(
@@ -39,7 +40,8 @@ namespace Host.Controllers
             ILoggerFactory loggerFactory,
             IIdentityServerInteractionService interaction,
             IHttpContextAccessor httpContext,
-            IClientStore clientStore)
+            IClientStore clientStore,
+            IAuthenticationSchemeProvider authSchemeProvider)
         {
             _userManager = userManager;
             _signInManager = signInManager;
@@ -48,8 +50,9 @@ namespace Host.Controllers
             _logger = loggerFactory.CreateLogger<AccountController>();
             _interaction = interaction;
             _clientStore = clientStore;
+            _authSchemeProvider = authSchemeProvider;
 
-            _account = new AccountService(interaction, httpContext, clientStore);
+            _account = new AccountService(interaction, httpContext, clientStore, authSchemeProvider);
         }
 
         //
@@ -139,7 +142,7 @@ namespace Host.Controllers
                 try
                 {
                     // hack: try/catch to handle social providers that throw
-                    await HttpContext.Authentication.SignOutAsync(vm.ExternalAuthenticationScheme,
+                    await HttpContext.SignOutAsync(vm.ExternalAuthenticationScheme,
                         new AuthenticationProperties { RedirectUri = url });
                 }
                 catch (NotSupportedException) // this is for the external providers that don't have signout

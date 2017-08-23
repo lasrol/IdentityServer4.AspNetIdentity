@@ -5,7 +5,9 @@
 using IdentityModel;
 using IdentityServer4.AspNetIdentity;
 using IdentityServer4.Configuration;
+using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Builder;
+using Microsoft.AspNetCore.Identity;
 
 namespace Microsoft.Extensions.DependencyInjection
 {
@@ -25,17 +27,24 @@ namespace Microsoft.Extensions.DependencyInjection
                 options.Authentication.AuthenticationScheme = authenticationScheme;
             });
 
+            builder.Services.Configure<AuthenticationOptions>(options =>
+            {
+                options.AuthenticationScheme = authenticationScheme;
+            });
+
+            builder.Services.Configure<SecurityStampValidatorOptions>(options =>
+            {
+                if (options.OnRefreshingPrincipal == null)
+                {
+                    options.OnRefreshingPrincipal = SecurityStampValidatorCallback.UpdatePrincipal;
+                }
+            });
+
             builder.Services.Configure<IdentityOptions>(options =>
             {
-                options.Cookies.ApplicationCookie.AuthenticationScheme = authenticationScheme;
                 options.ClaimsIdentity.UserIdClaimType = JwtClaimTypes.Subject;
                 options.ClaimsIdentity.UserNameClaimType = JwtClaimTypes.Name;
                 options.ClaimsIdentity.RoleClaimType = JwtClaimTypes.Role;
-
-                if (options.OnSecurityStampRefreshingPrincipal == null)
-                {
-                    options.OnSecurityStampRefreshingPrincipal = SecurityStampValidatorCallback.UpdatePrincipal;
-                }
             });
 
             builder.AddResourceOwnerValidator<ResourceOwnerPasswordValidator<TUser>>();
