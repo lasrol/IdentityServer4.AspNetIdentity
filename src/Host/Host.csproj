@@ -7,7 +7,6 @@
     <OutputType>Exe</OutputType>
     <PackageId>Host</PackageId>
     <UserSecretsId>aspnet-Host-4830448a-e37f-48ec-8054-4c5fc49a98bb</UserSecretsId>
-    <PackageTargetFallback>$(PackageTargetFallback);dotnet5.6;portable-net45+win8</PackageTargetFallback>
     <RuntimeFrameworkVersion>2.0</RuntimeFrameworkVersion>
   </PropertyGroup>
 
